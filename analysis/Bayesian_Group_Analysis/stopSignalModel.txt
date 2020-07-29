@@ -1,0 +1,46 @@
+# Inferring the parms of the SAT-function
+# Data are d-prime in each stop signal condition for different comparison
+model{
+    # Group level priors for each condition and item
+    for (conIdx in 1:C){
+        for (itemIdx in 1:I){
+            mu_m[conIdx, itemIdx] ~ dunif(.00001, 50) # noninformative prior at the item and group level
+            prec_m[conIdx, itemIdx] ~ dunif(.000001, 100)
+
+            mu_T0[conIdx, itemIdx] ~ dunif(.00001, .5)
+            prec_T0[conIdx, itemIdx] ~ dunif(.00001, 100)
+
+            mu_tau[conIdx, itemIdx] ~ dunif(.00001, 100)
+            prec_tau[conIdx, itemIdx] ~ dunif(.00001, 100)
+
+            msamp[conIdx, itemIdx] ~ dnorm(mu_m[conIdx, itemIdx], prec_m[conIdx, itemIdx])T(0, )
+            T0samp[conIdx, itemIdx] ~ dnorm(mu_T0[conIdx, itemIdx], prec_T0[conIdx, itemIdx])T(0, )
+            tausamp[conIdx, itemIdx] ~ dnorm(mu_tau[conIdx, itemIdx], prec_tau[conIdx, itemIdx])T(0, )
+            
+            for (didx in 1:D){
+                dprime[didx, conIdx, itemIdx] <- max((msamp[conIdx, itemIdx] * (1 - exp(-1/tausamp[conIdx, itemIdx] * (t[didx] - T0samp[conIdx, itemIdx])))), 0)
+            }
+        }
+    }
+
+    for (rowIdx in 1:R){
+    	# Priors for SAT function which generates d-prime
+        # Vary by item and by subject and have different group means for each condition
+        m[rowIdx] ~ dnorm(mu_m[cidx[rowIdx], iidx[rowIdx]], prec_m[cidx[rowIdx], iidx[rowIdx]])T(0, )
+        T0[rowIdx] ~ dnorm(mu_T0[cidx[rowIdx], iidx[rowIdx]], prec_T0[cidx[rowIdx], iidx[rowIdx]])T(0, )
+        tau[rowIdx] ~ dnorm(mu_tau[cidx[rowIdx], iidx[rowIdx]], prec_tau[cidx[rowIdx], iidx[rowIdx]])T(0, )
+        cMean[rowIdx] ~ dnorm(0, .5)
+
+        for (dlineIdx in 1:D){
+            d[rowIdx,dlineIdx] <- max((m[rowIdx] * (1 - exp(-1/tau[rowIdx] * (t[dlineIdx] - T0[rowIdx])))), 0)
+            c[rowIdx, dlineIdx] ~ dnorm(cMean[rowIdx], .5)
+            
+            thetah[rowIdx,dlineIdx] <- phi(d[rowIdx,dlineIdx]/2-c[rowIdx,dlineIdx])
+            thetaf[rowIdx,dlineIdx] <- phi(-d[rowIdx,dlineIdx]/2-c[rowIdx,dlineIdx])
+
+            # Likelihood for each 
+            hits[rowIdx,dlineIdx] ~ dbin(thetah[rowIdx,dlineIdx], Ns[rowIdx,dlineIdx])    # thetah comes from the d-prime model
+            falarms[rowIdx,dlineIdx] ~ dbin(thetaf[rowIdx,dlineIdx], Nn[rowIdx,dlineIdx]) 
+         }
+    }
+}

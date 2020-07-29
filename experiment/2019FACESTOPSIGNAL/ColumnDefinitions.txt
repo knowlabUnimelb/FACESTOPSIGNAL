@@ -1,0 +1,22 @@
+1: subject number
+2: session number 
+3: block 
+4: trial 
+5: response duration (or response lag) in secs
+6: typeTop: change in the top half - 1 = same, 2 = low, 3 = high
+7: typeBot: change in the bot half - 1 = same, 2 = low, 3 = high
+8: sameFlag: 1 = top is the same, 2 = top is different
+9: response: 1 = same, 2 = diff
+10: correctFlag: 1 = correct, 0 = incorrect
+11: rt (in msec)
+12: rtFlag: 1 = RT is good, 2 = RT too fast, 0 = RT too slow, nan = response before signal
+13: stimCol1: face set that the target and probe top is drawn from
+14: stimCol2: x value for top target
+15: stimCol3: y value for top target
+16: stimCol4: x value for top probe (test item)
+17: stimCol5: y value for top probe (test item)
+18: stimCol6: face set that the target and probe bottom is drawn from 
+19: stimCol7: x value for bot target
+20: stimCol8: y value for bot target
+21: stimCol9: x value for bot probe (test item)
+22: stimCol10: y value for bot probe (test item)

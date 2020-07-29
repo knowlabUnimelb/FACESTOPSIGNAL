@@ -1,0 +1,25 @@
+
+% runCompareTopDiffBottomSame
+% Figure D1
+%  S/S to L/S, H/S --> What is the effect on sensitivity of changing the 
+%       top face while holding the bottom constant and unchanged?
+
+
+runCompareTopDiffBottomDiff
+Figure E1
+% S/S to L/L, L/H, H/L, H/H --> Is there an interaction between changing
+%       the top and changing the bottom? Compared to S/S, changing the bottom
+%       should HELP so we would expect boosts in d-prime if the bottom half
+%       has any effect
+% 
+
+runFalseAlarmAnalysis
+Figure C1
+False alarm analysis
+% S/S to S/L, S/H --> These are all "same" trials, so we can't compute HITS to FALSE ALARMS as 
+%       there wouldn't be any HITS. We expect CORRECT REJECTIONS to decrease (i.e., 
+%       FALSE ALARMS to increase) with the strength of the bottom. We can just compare the error rate across items
+
+runCongruencyAlignmentInteraction
+Figures 5, 6, and 7
+congruency x alignment interaction
