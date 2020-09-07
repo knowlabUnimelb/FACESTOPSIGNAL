@@ -7,11 +7,22 @@ clc
 close all
 checkchains = true;
 
-subs = 1:6; 
-conditions = [1 1 1 2 2 2];
+% subs = 1:6; 
+% conditions = [1 1 1 2 2 2];
 
-% subs = [1 4];
-% conditions = [1 2];
+si = 3; 
+
+switch si
+    case 1
+        subs = [1 4];
+        conditions = [1 2];
+    case 2
+        subs = [2 5];
+        conditions = [1 2];
+    case 3
+        subs = [3 6];
+        conditions = [1 2];
+end
 
 %% Set Up Data
 HR = [];
@@ -49,7 +60,7 @@ for sidx = 1:numel(subs)
     
 end
 cols = ['sub', 'cond', cols]; % 'sub'    'cond'    'top'    'bot'    'dline'    'rate'    'Nresp'    'Ntot'    'rt'
-return
+
 deadlines = [.05, .1, .2, .4, .8, 1.8];
 rts = aggregate([HR; FA], strcmp(cols, 'dline'), strcmp(cols, 'rt'));
 tpt = deadlines + rts(:,2)'./1000;
@@ -62,7 +73,7 @@ R = size(hits, 1); % Number of rows (i.e., subjects x conditions x items)
 
 %% MCMC Settings for JAGS
 nchains  = 3;     % How Many Chains?
-nburnin  = 5000;   % How Many Burn-in Samples?
+nburnin  = 10000;   % How Many Burn-in Samples?
 nsamples = 5000;  % How Many Recorded Samples? originally 5000
 
 %% Assign Matlab Variables to the Observed JAGS Nodes
@@ -91,7 +102,7 @@ for i=1:nchains
 end
 
 %% Run JAGS
-savefn = 'samples_congruencyAlignmentInteraction_s1.mat';
+savefn = sprintf('samples_congruencyAlignmentInteraction_s%d.mat', si);
 jagsModelFileName = 'stopSignalModel.txt';
 whichParmsToMonitor = {'mu_m', 'prec_m', 'mu_T0', 'prec_T0', 'mu_tau', 'prec_tau',...
                        'm', 'T0', 'tau', 'd', 'c', 'dprime',...
@@ -181,7 +192,7 @@ colours = [.10 .72 .88; .27 .47 .77; .43 .27 .66; .56 .03 .52;
           %  .44 .99 .69; .54 .76 .60; .67 .53 .54; .87 .25 .45]; original colour scheme
        
 subplot(2,6,7); 
-xi = linspace(0, 5, 200);
+xi = linspace(0, 6, 200);
 for i = 1:4
     mf(i,:) = ksdensity(m(:,i), xi);
     hm(i) = fill([xi, fliplr(xi)], [mf(i,:), zeros(1,size(mf(i,:),2))], colours(i,:), 'FaceAlpha', .7); hold on  
@@ -293,16 +304,16 @@ low24 = prctile(y24, 5); hi24  = prctile(y24, 95);
 % post_d11 = datasample([squeeze(samples.dprime(1,:,:,1,1)); squeeze(samples.dprime(2,:,:,1,1)); squeeze(samples.dprime(3,:,:,1,1))], 500);
 % post_d12 = datasample([squeeze(samples.dprime(1,:,:,1,2)); squeeze(samples.dprime(2,:,:,1,2)); squeeze(samples.dprime(3,:,:,1,2))], 500);
 % post_d21 = datasample([squeeze(samples.dprime(1,:,:,2,1)); squeeze(samples.dprime(2,:,:,2,1)); squeeze(samples.dprime(3,:,:,2,1))], 500);
-% post_d22 = datasample([squeeze(samples.dprime(1,:,:,2,2)); squeeze(samples.dprime(2,:,:,2,2)); squeeze(samples.dprime(3,:,:,2,2))], 500);
-post_d11 = datasample([squeeze(samples.d(1,:,1,:)); squeeze(samples.d(1,:,5,:)); squeeze(samples.d(1,:,9,:))], 500);
-post_d12 = datasample([squeeze(samples.d(1,:,2,:)); squeeze(samples.d(1,:,6,:)); squeeze(samples.d(1,:,10,:))], 500);
-post_d13 = datasample([squeeze(samples.d(1,:,3,:)); squeeze(samples.d(1,:,7,:)); squeeze(samples.d(1,:,11,:))], 500);
-post_d14 = datasample([squeeze(samples.d(1,:,4,:)); squeeze(samples.d(1,:,8,:)); squeeze(samples.d(1,:,12,:))], 500);
+% post_d22 = datasample([squeeze(samples.dprime(1,:,:,2,2)); squeeze(samples.dprime(2,:,:,2,2)); squeeze(samaples.dprime(3,:,:,2,2))], 500);
+post_d11 = datasample([squeeze(samples.d(1,:,1,:))], 500);
+post_d12 = datasample([squeeze(samples.d(1,:,2,:))], 500);
+post_d13 = datasample([squeeze(samples.d(1,:,3,:))], 500);
+post_d14 = datasample([squeeze(samples.d(1,:,4,:))], 500);
 
-post_d21 = datasample([squeeze(samples.d(1,:,13,:)); squeeze(samples.d(1,:,17,:)); squeeze(samples.d(1,:,21,:))], 500);
-post_d22 = datasample([squeeze(samples.d(1,:,14,:)); squeeze(samples.d(1,:,18,:)); squeeze(samples.d(1,:,22,:))], 500);
-post_d23 = datasample([squeeze(samples.d(1,:,15,:)); squeeze(samples.d(1,:,19,:)); squeeze(samples.d(1,:,23,:))], 500);
-post_d24 = datasample([squeeze(samples.d(1,:,16,:)); squeeze(samples.d(1,:,20,:)); squeeze(samples.d(1,:,24,:))], 500);
+post_d21 = datasample([squeeze(samples.d(1,:,5,:))], 500);
+post_d22 = datasample([squeeze(samples.d(1,:,6,:))], 500);
+post_d23 = datasample([squeeze(samples.d(1,:,7,:))], 500);
+post_d24 = datasample([squeeze(samples.d(1,:,8,:))], 500);
 
 post_d11(post_d11==0) = nan;
 post_d12(post_d12==0) = nan;
@@ -341,7 +352,7 @@ vh14 = violin(post_d14, 'x', xloc, ...
 %vh14 = violin(post_d14, 'x', xloc, ...
 %    'facecolor', [.96 .73 .27], 'edgecolor', 'k', 'facealpha', .7); %I-H
 
-set(gca, 'XLim', [0 2.5], 'YLim', [0 5], 'XTick', 0:.5:2.5, 'XTickLabel',  {'.00', '.50', '1.0', '1.5', '2.0', '2.5'})
+set(gca, 'XLim', [0 2.5], 'YLim', [0 6], 'XTick', 0:.5:2.5, 'XTickLabel',  {'.00', '.50', '1.0', '1.5', '2.0', '2.5'})
 % set(gca, 'XLim', [0 xmax], 'YLim', [0 5], 'TickLabelInterpreter', 'tex', 'XTick', xloc, 'XTickLabel',  xticklabs) % num2str(round(tpt,2)')
 % set(gca, 'Children', [vh11, vh12, fh11, fh12])
 xlabel('Total Processing Time (sec)')
@@ -365,7 +376,7 @@ vh23 = violin(post_d23, 'x', xloc, ...
 vh24 = violin(post_d24, 'x', xloc, ...
     'facecolor', [.67 .53 .54], 'edgecolor', 'k', 'facealpha', .5);
 
-set(gca, 'XLim', [0 2.5], 'YLim', [0 5], 'XTick', 0:.5:2.5, 'XTickLabel',  {'.00', '.50', '1.0', '1.5', '2.0', '2.5'})
+set(gca, 'XLim', [0 2.5], 'YLim', [0 6], 'XTick', 0:.5:2.5, 'XTickLabel',  {'.00', '.50', '1.0', '1.5', '2.0', '2.5'})
 % set(gca, 'XLim', [0 xmax], 'YLim', [0 5],'TickLabelInterpreter', 'tex', 'XTick', xloc, 'XTickLabel',  xticklabs)
 % set(gca, 'Children', [vh21, vh22, fh21, fh22])
 xlabel('Total Processing Time (sec)')
@@ -425,7 +436,7 @@ figure('WindowStyle', 'docked')
 
 % mparm
 subplot(1,3,1)
-xi = linspace(-3, 3, 200);
+xi = linspace(-3, 5, 200);
 mLowDens = ksdensity(mlow, xi); 
 mHiDens = ksdensity(mhi, xi);
 fill([xi, fliplr(xi)], [mLowDens, zeros(1,size(mLowDens,2))], colours(1,:), 'FaceAlpha', .7); hold on
@@ -471,3 +482,63 @@ tauLow95 = [prctile(taulow, 2.5), prctile(taulow, 97.5)];
 fprintf('95%s HDI, tau parm, low salience = (%3.2f, %3.2f)\n', '%', tauLow95(1), tauLow95(2))
 tauHi95 = [prctile(tauhi, 2.5), prctile(tauhi, 97.5)];
 fprintf('95%s HDI, tau parm, high salience = (%3.2f, %3.2f)\n\n', '%', tauHi95(1), tauHi95(2))
+
+%% Plot criterion estimates
+figure('WindowStyle', 'docked')
+post_c11 = datasample([squeeze(samples.c(1,:,1,:))], 500);
+post_c12 = datasample([squeeze(samples.c(1,:,2,:))], 500);
+post_c13 = datasample([squeeze(samples.c(1,:,3,:))], 500);
+post_c14 = datasample([squeeze(samples.c(1,:,4,:))], 500);
+
+post_c21 = datasample([squeeze(samples.c(1,:,5,:))], 500);
+post_c22 = datasample([squeeze(samples.c(1,:,6,:))], 500);
+post_c23 = datasample([squeeze(samples.c(1,:,7,:))], 500);
+post_c24 = datasample([squeeze(samples.c(1,:,8,:))], 500);
+
+post_c11(post_c11==0) = nan;
+post_c12(post_c12==0) = nan;
+post_c13(post_c13==0) = nan;
+post_c14(post_c14==0) = nan;
+post_c21(post_c21==0) = nan;
+post_c22(post_c22==0) = nan;
+post_c23(post_c23==0) = nan;
+post_c24(post_c24==0) = nan;
+                               
+subplot(2,2,1)
+ch11 = violin(post_c11, 'x', xloc, ...
+    'facecolor', [.27 .47 .77], 'edgecolor', 'k', 'facealpha', .7); hold on %C-L
+ch12 = violin(post_c12, 'x', xloc, ...
+    'facecolor', [.56 .03 .52], 'edgecolor', 'k', 'facealpha', .7); %C-H
+ch13 = violin(post_c13, 'x', xloc, ...
+    'facecolor', [.10 .72 .88], 'edgecolor', 'k', 'facealpha', .7); %I-L
+ch14 = violin(post_c14, 'x', xloc, ...
+    'facecolor', [.43 .27 .66], 'edgecolor', 'k', 'facealpha', .7); %I-H
+
+set(gca, 'XLim', [0 2.5], 'YLim', [-2 2], 'XTick', 0:.5:2.5, 'XTickLabel',  {'.00', '.50', '1.0', '1.5', '2.0', '2.5'})
+% set(gca, 'XLim', [0 xmax], 'YLim', [0 5], 'TickLabelInterpreter', 'tex', 'XTick', xloc, 'XTickLabel',  xticklabs) % num2str(round(tpt,2)')
+% set(gca, 'Children', [vh11, vh12, fh11, fh12])
+xlabel('Total Processing Time (sec)')
+ylabel('c')
+legend([ch12(1), ch14(1), ch11(1), ch13(1)],...
+    'Aligned: Congruent High','Aligned: Incongruent High', 'Aligned: Congruent Low','Aligned: Incongruent Low',...
+    'Location', 'Best')
+% .44 .99 .69; .54 .76 .60; .67 .53 .54; .87 .25 .45
+
+subplot(2,2,2)
+ch21 = violin(post_c21, 'x', xloc, ...
+    'facecolor', [.54 .76 .60], 'edgecolor', 'k', 'facealpha', .5); hold on
+ch22 = violin(post_c22, 'x', xloc, ...
+    'facecolor', [.87 .25 .45], 'edgecolor', 'k', 'facealpha', .5);
+ch23 = violin(post_c23, 'x', xloc, ...
+    'facecolor', [.44 .99 .69], 'edgecolor', 'k', 'facealpha', .5);
+ch24 = violin(post_c24, 'x', xloc, ...
+    'facecolor', [.67 .53 .54], 'edgecolor', 'k', 'facealpha', .5);
+
+set(gca, 'XLim', [0 2.5], 'YLim', [-2 2], 'XTick', 0:.5:2.5, 'XTickLabel',  {'.00', '.50', '1.0', '1.5', '2.0', '2.5'})
+% set(gca, 'XLim', [0 xmax], 'YLim', [0 5],'TickLabelInterpreter', 'tex', 'XTick', xloc, 'XTickLabel',  xticklabs)
+% set(gca, 'Children', [vh21, vh22, fh21, fh22])
+xlabel('Total Processing Time (sec)')
+ylabel('c')
+legend([ch22(1), ch24(1), ch21(1), ch23(1)],...
+    'Misaligned: Congruent High', 'Misaligned: Incongruent High', 'Misaligned: Congruent Low', 'Misaligned: Incongruent Low',...
+    'Location', 'Best')
