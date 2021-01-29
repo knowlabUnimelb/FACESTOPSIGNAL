@@ -381,3 +381,24 @@ sets = allcomb(1:size(mf,1), 1:size(mf,1));
 for i = 1:size(sets, 1); 
     olap(sets(i,1), sets(i,2)) = overlap(mf(sets(i,1), :), mf(sets(i,2), :), xi); 
 end
+
+%% Plot individual table - d-prime for each condition
+subjectIds = {'1', '2', '3', '1', '2', '3'};
+alignmentConditionIds = {'   Aligned', 'Misaligned'};
+itemConditionIds = {' Low/Low ', ' Low/High', 'High/Low ', 'High/High'};
+totalProcessingTimeStr = cellstr(num2str(round(tpt * 1000, 0)'))';
+
+cons  = falarms(:,1:3);
+means = stats.mean.d;
+ci_lo = reshape(stats.ci_low.d, R, D);
+ci_hi = reshape(stats.ci_high.d, R, D);
+
+cnt = 1; 
+for i = 1:R
+    table{i,1} = sprintf('%s\t %s\t %4s\t', subjectIds{cons(i,1)}, alignmentConditionIds{cons(i,2)}, itemConditionIds{cons(i,3)});
+    for j = 1:D
+        table{i,1} = [table{i,1}, sprintf('%1.2f [%1.2f-%1.2f]\t', means(i,j), ci_lo(i,j), ci_hi(i,j))];
+    end
+end
+
+vertcat(table{:})
