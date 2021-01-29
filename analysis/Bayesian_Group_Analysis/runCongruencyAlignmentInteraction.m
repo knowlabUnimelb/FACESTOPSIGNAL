@@ -9,10 +9,12 @@ checkchains = true;
 
 subs = 1:6; 
 conditions = [1 1 1 2 2 2];
-
+% 
 % subs = [1 4];
+% subs = [2 5];
+% subs = [3 6];
 % conditions = [1 2];
-
+% 
 %% Set Up Data
 HR = [];
 FA = [];
@@ -49,7 +51,7 @@ for sidx = 1:numel(subs)
     
 end
 cols = ['sub', 'cond', cols]; % 'sub'    'cond'    'top'    'bot'    'dline'    'rate'    'Nresp'    'Ntot'    'rt'
-return
+
 deadlines = [.05, .1, .2, .4, .8, 1.8];
 rts = aggregate([HR; FA], strcmp(cols, 'dline'), strcmp(cols, 'rt'));
 tpt = deadlines + rts(:,2)'./1000;
@@ -91,7 +93,7 @@ for i=1:nchains
 end
 
 %% Run JAGS
-savefn = 'samples_congruencyAlignmentInteraction_s1.mat';
+savefn = 'samples_congruencyAlignmentInteraction.mat';
 jagsModelFileName = 'stopSignalModel.txt';
 whichParmsToMonitor = {'mu_m', 'prec_m', 'mu_T0', 'prec_T0', 'mu_tau', 'prec_tau',...
                        'm', 'T0', 'tau', 'd', 'c', 'dprime',...
@@ -289,57 +291,118 @@ low22 = prctile(y22, 5); hi22  = prctile(y22, 95);
 low23 = prctile(y23, 5); hi23  = prctile(y23, 95);
 low24 = prctile(y24, 5); hi24  = prctile(y24, 95);
 
+% To compute the interaction posterior, I need to take a linear combination
+% of the d-prime samples for each congruency x alignment interaction
+%   sample.d is in order of alignment x subject x item (congruent_low,
+%   congruent_high, incongruent_low, incongruent_high) with condition
+%   changing the fastest
+%
+% Dimensions of samples.d are chain, sample, condition (see first 3 columns
+% of falarms), and response signal
+%
+% To find the interaction posterior, I combine the chains and samples from
+% each subject and then downsample those. I can then compute the
+% interaction and have a set of interaction samples. 
 
-% post_d11 = datasample([squeeze(samples.dprime(1,:,:,1,1)); squeeze(samples.dprime(2,:,:,1,1)); squeeze(samples.dprime(3,:,:,1,1))], 500);
-% post_d12 = datasample([squeeze(samples.dprime(1,:,:,1,2)); squeeze(samples.dprime(2,:,:,1,2)); squeeze(samples.dprime(3,:,:,1,2))], 500);
-% post_d21 = datasample([squeeze(samples.dprime(1,:,:,2,1)); squeeze(samples.dprime(2,:,:,2,1)); squeeze(samples.dprime(3,:,:,2,1))], 500);
-% post_d22 = datasample([squeeze(samples.dprime(1,:,:,2,2)); squeeze(samples.dprime(2,:,:,2,2)); squeeze(samples.dprime(3,:,:,2,2))], 500);
-post_d11 = datasample([squeeze(samples.d(1,:,1,:)); squeeze(samples.d(1,:,5,:)); squeeze(samples.d(1,:,9,:))], 500);
-post_d12 = datasample([squeeze(samples.d(1,:,2,:)); squeeze(samples.d(1,:,6,:)); squeeze(samples.d(1,:,10,:))], 500);
-post_d13 = datasample([squeeze(samples.d(1,:,3,:)); squeeze(samples.d(1,:,7,:)); squeeze(samples.d(1,:,11,:))], 500);
-post_d14 = datasample([squeeze(samples.d(1,:,4,:)); squeeze(samples.d(1,:,8,:)); squeeze(samples.d(1,:,12,:))], 500);
+    % Aligned_congruent_low
+%     post_d11 = datasample([[squeeze(samples.d(1,:,1,:)); squeeze(samples.d(1,:,5,:)); squeeze(samples.d(1,:,9,:))];
+%                            [squeeze(samples.d(2,:,1,:)); squeeze(samples.d(2,:,5,:)); squeeze(samples.d(2,:,9,:))];
+%                            [squeeze(samples.d(3,:,1,:)); squeeze(samples.d(3,:,5,:)); squeeze(samples.d(3,:,9,:))]], 1500);
 
-post_d21 = datasample([squeeze(samples.d(1,:,13,:)); squeeze(samples.d(1,:,17,:)); squeeze(samples.d(1,:,21,:))], 500);
-post_d22 = datasample([squeeze(samples.d(1,:,14,:)); squeeze(samples.d(1,:,18,:)); squeeze(samples.d(1,:,22,:))], 500);
-post_d23 = datasample([squeeze(samples.d(1,:,15,:)); squeeze(samples.d(1,:,19,:)); squeeze(samples.d(1,:,23,:))], 500);
-post_d24 = datasample([squeeze(samples.d(1,:,16,:)); squeeze(samples.d(1,:,20,:)); squeeze(samples.d(1,:,24,:))], 500);
+nt = nchains*nsamples;
+acl      = [1*ones(nt,1), squeeze([samples.d(1,:,1,:), samples.d(2,:,1,:), samples.d(3,:,1,:)]); % P1
+            2*ones(nt,1), squeeze([samples.d(1,:,5,:), samples.d(2,:,5,:), samples.d(3,:,5,:)]); % P2
+            3*ones(nt,1), squeeze([samples.d(1,:,9,:), samples.d(2,:,9,:), samples.d(3,:,9,:)])]; % P3
+post_dacl = acl(:,2:end); %datasample(acl(:,2:end), 1500);
 
-post_d11(post_d11==0) = nan;
-post_d12(post_d12==0) = nan;
-post_d13(post_d13==0) = nan;
-post_d14(post_d14==0) = nan;
-post_d21(post_d21==0) = nan;
-post_d22(post_d22==0) = nan;
-post_d23(post_d23==0) = nan;
-post_d24(post_d24==0) = nan;
+    % Aligned_congruent_high
+%     post_d12 = datasample([[squeeze(samples.d(1,:,2,:)); squeeze(samples.d(1,:,6,:)); squeeze(samples.d(1,:,10,:))];
+%         [squeeze(samples.d(2,:,2,:)); squeeze(samples.d(2,:,6,:)); squeeze(samples.d(2,:,10,:))];
+%         [squeeze(samples.d(3,:,2,:)); squeeze(samples.d(3,:,6,:)); squeeze(samples.d(3,:,10,:))]], 1500);
+
+ach      = [1*ones(nt,1), squeeze([samples.d(1,:,2,:), samples.d(2,:,2,:), samples.d(3,:,2,:)]); % P1
+            2*ones(nt,1), squeeze([samples.d(1,:,6,:), samples.d(2,:,6,:), samples.d(3,:,6,:)]); % P2
+            3*ones(nt,1), squeeze([samples.d(1,:,10,:), samples.d(2,:,10,:), samples.d(3,:,10,:)])]; % P3
+post_dach = ach(:,2:end); %datasample(ach(:,2:end), 1500);
+
+    % Aligned_incongruent_low
+%     post_d13 = datasample([[squeeze(samples.d(1,:,3,:)); squeeze(samples.d(1,:,7,:)); squeeze(samples.d(1,:,11,:))];
+%         [squeeze(samples.d(2,:,3,:)); squeeze(samples.d(2,:,7,:)); squeeze(samples.d(2,:,11,:))];
+%         [squeeze(samples.d(3,:,3,:)); squeeze(samples.d(3,:,7,:)); squeeze(samples.d(3,:,11,:))]], 1500);
+
+ail      = [1*ones(nt,1), squeeze([samples.d(1,:,3,:), samples.d(2,:,3,:), samples.d(3,:,3,:)]); % P1
+            2*ones(nt,1), squeeze([samples.d(1,:,7,:), samples.d(2,:,7,:), samples.d(3,:,7,:)]); % P2
+            3*ones(nt,1), squeeze([samples.d(1,:,11,:), samples.d(2,:,11,:), samples.d(3,:,11,:)])]; % P3
+post_dail = ail(:,2:end); %datasample(ail(:,2:end), 1500);
+
+    % Aligned_incongruent_high
+%     post_d14 = datasample([[squeeze(samples.d(1,:,4,:)); squeeze(samples.d(1,:,8,:)); squeeze(samples.d(1,:,12,:))];
+%         [squeeze(samples.d(2,:,4,:)); squeeze(samples.d(2,:,8,:)); squeeze(samples.d(2,:,12,:))];
+%         [squeeze(samples.d(3,:,4,:)); squeeze(samples.d(3,:,8,:)); squeeze(samples.d(3,:,12,:))]], 1500);
+
+aih      = [1*ones(nt,1), squeeze([samples.d(1,:,4,:), samples.d(2,:,4,:), samples.d(3,:,4,:)]); % P1
+            2*ones(nt,1), squeeze([samples.d(1,:,8,:), samples.d(2,:,8,:), samples.d(3,:,8,:)]); % P2
+            3*ones(nt,1), squeeze([samples.d(1,:,12,:), samples.d(2,:,12,:), samples.d(3,:,12,:)])]; % P3
+post_daih = aih(:,2:end); %datasample(aih(:,2:end), 1500);
+    
+    
+    % Misaligned_congruent_low    
+%     post_d21 = datasample([[squeeze(samples.d(1,:,13,:)); squeeze(samples.d(1,:,17,:)); squeeze(samples.d(1,:,21,:))];
+%         [squeeze(samples.d(2,:,13,:)); squeeze(samples.d(2,:,17,:)); squeeze(samples.d(2,:,21,:))];
+%         [squeeze(samples.d(3,:,13,:)); squeeze(samples.d(3,:,17,:)); squeeze(samples.d(3,:,21,:))]], 1500);
+
+mcl      = [1*ones(nt,1), squeeze([samples.d(1,:,13,:), samples.d(2,:,13,:), samples.d(3,:,13,:)]); % P1
+            2*ones(nt,1), squeeze([samples.d(1,:,17,:), samples.d(2,:,17,:), samples.d(3,:,17,:)]); % P2
+            3*ones(nt,1), squeeze([samples.d(1,:,21,:), samples.d(2,:,21,:), samples.d(3,:,21,:)])]; % P3
+post_dmcl = mcl(:,2:end); %datasample(mcl(:,2:end), 1500);
+
+
+    % Misaligned_congruent_high        
+%     post_d22 = datasample([[squeeze(samples.d(1,:,14,:)); squeeze(samples.d(1,:,18,:)); squeeze(samples.d(1,:,22,:))];
+%         [squeeze(samples.d(2,:,14,:)); squeeze(samples.d(2,:,18,:)); squeeze(samples.d(2,:,22,:))];
+%         [squeeze(samples.d(3,:,14,:)); squeeze(samples.d(3,:,18,:)); squeeze(samples.d(3,:,22,:))]], 1500);
+
+mch      = [1*ones(nt,1), squeeze([samples.d(1,:,14,:), samples.d(2,:,14,:), samples.d(3,:,14,:)]); % P1
+            2*ones(nt,1), squeeze([samples.d(1,:,18,:), samples.d(2,:,18,:), samples.d(3,:,18,:)]); % P2
+            3*ones(nt,1), squeeze([samples.d(1,:,22,:), samples.d(2,:,22,:), samples.d(3,:,22,:)])]; % P3
+post_dmch = mch(:,2:end); %datasample(mch(:,2:end), 1500);
+
+
+    % Misaligned_incongruent_low        
+%     post_d23 = datasample([[squeeze(samples.d(1,:,15,:)); squeeze(samples.d(1,:,19,:)); squeeze(samples.d(1,:,23,:))];
+%         [squeeze(samples.d(2,:,15,:)); squeeze(samples.d(2,:,19,:)); squeeze(samples.d(2,:,23,:))];
+%         [squeeze(samples.d(3,:,15,:)); squeeze(samples.d(3,:,19,:)); squeeze(samples.d(3,:,23,:))]], 1500);
+    
+mil      = [1*ones(nt,1), squeeze([samples.d(1,:,15,:), samples.d(2,:,15,:), samples.d(3,:,15,:)]); % P1
+            2*ones(nt,1), squeeze([samples.d(1,:,19,:), samples.d(2,:,19,:), samples.d(3,:,19,:)]); % P2
+            3*ones(nt,1), squeeze([samples.d(1,:,23,:), samples.d(2,:,23,:), samples.d(3,:,23,:)])]; % P3
+post_dmil = mil(:,2:end); %datasample(mil(:,2:end), 1500);
+
+    % Misaligned_incongruent_high
+%     post_d24 = datasample([[squeeze(samples.d(1,:,16,:)); squeeze(samples.d(1,:,20,:)); squeeze(samples.d(1,:,24,:))];
+%         [squeeze(samples.d(2,:,16,:)); squeeze(samples.d(2,:,20,:)); squeeze(samples.d(2,:,24,:))];
+%         [squeeze(samples.d(3,:,16,:)); squeeze(samples.d(3,:,20,:)); squeeze(samples.d(3,:,24,:))]], 1500);
+
+mih      = [1*ones(nt,1), squeeze([samples.d(1,:,16,:), samples.d(2,:,16,:), samples.d(3,:,16,:)]); % P1
+            2*ones(nt,1), squeeze([samples.d(1,:,20,:), samples.d(2,:,20,:), samples.d(3,:,20,:)]); % P2
+            3*ones(nt,1), squeeze([samples.d(1,:,24,:), samples.d(2,:,24,:), samples.d(3,:,24,:)])]; % P3
+post_dmih = mih(:,2:end); %datasample(mih(:,2:end), 1500);
+
+%%
                                
 subplot(2,2,1)
 fh11 = fill([xt, fliplr(xt)], [low11, fliplr(hi11)], [.27 .47 .77], 'FaceAlpha', .4, 'EdgeAlpha', 0); hold on
 fh12 = fill([xt, fliplr(xt)], [low12, fliplr(hi12)], [.56 .03 .52], 'FaceAlpha', .4, 'EdgeAlpha', 0);
 fh13 = fill([xt, fliplr(xt)], [low13, fliplr(hi13)], [.10 .72 .88], 'FaceAlpha', .4, 'EdgeAlpha', 0);
 fh14 = fill([xt, fliplr(xt)], [low14, fliplr(hi14)], [.43 .27 .66], 'FaceAlpha', .4, 'EdgeAlpha', 0);
-vh11 = violin(post_d11, 'x', xloc, ...
+vh11 = violin(post_dacl, 'x', xloc, ...
     'facecolor', [.27 .47 .77], 'edgecolor', 'k', 'facealpha', .7); hold on %C-L
-vh12 = violin(post_d12, 'x', xloc, ...
+vh12 = violin(post_dach, 'x', xloc, ...
     'facecolor', [.56 .03 .52], 'edgecolor', 'k', 'facealpha', .7); %C-H
-vh13 = violin(post_d13, 'x', xloc, ...
+vh13 = violin(post_dail, 'x', xloc, ...
     'facecolor', [.10 .72 .88], 'edgecolor', 'k', 'facealpha', .7); %I-L
-vh14 = violin(post_d14, 'x', xloc, ...
+vh14 = violin(post_daih, 'x', xloc, ...
     'facecolor', [.43 .27 .66], 'edgecolor', 'k', 'facealpha', .7); %I-H
-
-%subplot(2,2,1)
-%fh11 = fill([xt, fliplr(xt)], [low11, fliplr(hi11)], [.97 .93 .22], 'FaceAlpha', .4, 'EdgeAlpha', 0); hold on
-%fh12 = fill([xt, fliplr(xt)], [low12, fliplr(hi12)], [.96 .56 .33], 'FaceAlpha', .4, 'EdgeAlpha', 0);
-%fh13 = fill([xt, fliplr(xt)], [low13, fliplr(hi13)], [1 1 .07], 'FaceAlpha', .4, 'EdgeAlpha', 0);
-%fh14 = fill([xt, fliplr(xt)], [low14, fliplr(hi14)], [.96 .73 .27], 'FaceAlpha', .4, 'EdgeAlpha', 0);
-%vh11 = violin(post_d11, 'x', xloc, ...
-%    'facecolor', [.97 .93 .22], 'edgecolor', 'k', 'facealpha', .7); hold on %C-L
-%vh12 = violin(post_d12, 'x', xloc, ...
-%    'facecolor', [.96 .56 .33], 'edgecolor', 'k', 'facealpha', .7); %C-H
-%vh13 = violin(post_d13, 'x', xloc, ...
-%    'facecolor', [1 1 .07], 'edgecolor', 'k', 'facealpha', .7); %I-L
-%vh14 = violin(post_d14, 'x', xloc, ...
-%    'facecolor', [.96 .73 .27], 'edgecolor', 'k', 'facealpha', .7); %I-H
 
 set(gca, 'XLim', [0 2.5], 'YLim', [0 5], 'XTick', 0:.5:2.5, 'XTickLabel',  {'.00', '.50', '1.0', '1.5', '2.0', '2.5'})
 % set(gca, 'XLim', [0 xmax], 'YLim', [0 5], 'TickLabelInterpreter', 'tex', 'XTick', xloc, 'XTickLabel',  xticklabs) % num2str(round(tpt,2)')
@@ -356,13 +419,13 @@ fh22 = fill([xt, fliplr(xt)], [low22, fliplr(hi22)], [.87 .25 .45], 'FaceAlpha',
 fh23 = fill([xt, fliplr(xt)], [low23, fliplr(hi23)], [.44 .99 .69], 'FaceAlpha', .5, 'EdgeAlpha', 0);
 fh24 = fill([xt, fliplr(xt)], [low24, fliplr(hi24)], [.67 .53 .54], 'FaceAlpha', .5, 'EdgeAlpha', 0);
 
-vh21 = violin(post_d21, 'x', xloc, ...
+vh21 = violin(post_dmcl, 'x', xloc, ...
     'facecolor', [.54 .76 .60], 'edgecolor', 'k', 'facealpha', .5); hold on
-vh22 = violin(post_d22, 'x', xloc, ...
+vh22 = violin(post_dmch, 'x', xloc, ...
     'facecolor', [.87 .25 .45], 'edgecolor', 'k', 'facealpha', .5);
-vh23 = violin(post_d23, 'x', xloc, ...
+vh23 = violin(post_dmil, 'x', xloc, ...
     'facecolor', [.44 .99 .69], 'edgecolor', 'k', 'facealpha', .5);
-vh24 = violin(post_d24, 'x', xloc, ...
+vh24 = violin(post_dmih, 'x', xloc, ...
     'facecolor', [.67 .53 .54], 'edgecolor', 'k', 'facealpha', .5);
 
 set(gca, 'XLim', [0 2.5], 'YLim', [0 5], 'XTick', 0:.5:2.5, 'XTickLabel',  {'.00', '.50', '1.0', '1.5', '2.0', '2.5'})
@@ -376,7 +439,7 @@ legend([fh22, fh24, fh21, fh23],...
 
 %% Compute overlap between m distributions
 sets = allcomb(1:size(mf,1), 1:size(mf,1));
-for i = 1:size(sets, 1); 
+for i = 1:size(sets, 1) 
     olap(sets(i,1), sets(i,2)) = overlap(mf(sets(i,1), :), mf(sets(i,2), :), xi); 
 end
 
@@ -384,7 +447,7 @@ end
 % Low salience
 figure('WindowStyle', 'docked')
 subplot(2,1,1)
-lowI = (post_d11 - post_d13) - (post_d21 - post_d23);
+lowI = (post_dacl - post_dail) - (post_dmcl - post_dmil);
 violin(lowI, 'x', xloc, ...
     'facecolor', [.97 .93 .22], 'edgecolor', 'k', 'facealpha', .7); hold on
 plot(xt, zeros(numel(xt),1), '--k')
@@ -399,7 +462,7 @@ fprintf('95%s HDI''s for Low Salience Interaction\n', '%')
 [prctile(lowI, 2.5); prctile(lowI, 97.5)]
 
 subplot(2,1,2)
-hiI = (post_d12 - post_d14) - (post_d22 - post_d24);
+hiI = (post_dach - post_daih) - (post_dmch - post_dmih);
 violin(hiI, 'x', xloc, ...
     'facecolor', [.96 .73 .27], 'edgecolor', 'k', 'facealpha', .7); hold on
 plot(xt, zeros(numel(xt),1), '--k')
@@ -471,3 +534,50 @@ tauLow95 = [prctile(taulow, 2.5), prctile(taulow, 97.5)];
 fprintf('95%s HDI, tau parm, low salience = (%3.2f, %3.2f)\n', '%', tauLow95(1), tauLow95(2))
 tauHi95 = [prctile(tauhi, 2.5), prctile(tauhi, 97.5)];
 fprintf('95%s HDI, tau parm, high salience = (%3.2f, %3.2f)\n\n', '%', tauHi95(1), tauHi95(2))
+
+
+%% Individual subject interaction posteriors
+sub_sets = {[1], [2], [3], [1:3]};
+subjectIDs = {'    1', '    2', '    3', 'Group'};
+cnt = 1; 
+for i = 1:numel(sub_sets)
+   lowI = (acl(ismember(acl(:,1), sub_sets{i}), 2:end) -...
+              ail(ismember(ail(:,1), sub_sets{i}), 2:end)) -...
+          (mcl(ismember(mcl(:,1), sub_sets{i}),2:end) -...
+              mil(ismember(mil(:,1), sub_sets{i}), 2:end));
+
+   highI = (ach(ismember(ach(:,1), sub_sets{i}), 2:end) -...
+              aih(ismember(aih(:,1), sub_sets{i}), 2:end)) -...
+           (mch(ismember(mch(:,1), sub_sets{i}),2:end) -...
+              mih(ismember(mih(:,1), sub_sets{i}), 2:end));          
+
+   stats.mean.lowI(i,:) = mean(lowI);       
+   stats.mean.highI(i,:) = mean(highI);
+
+   stats.ci_low.lowI(i,:) = prctile(lowI, 2.5);
+   stats.ci_low.highI(i,:) = prctile(highI, 2.5);
+
+   stats.ci_high.lowI(i,:) = prctile(lowI, 97.5);
+   stats.ci_high.highI(i,:) = prctile(highI, 97.5);
+
+   % Make table
+    itemConditionIds = {' Low', 'High'};
+    totalProcessingTimeStr = cellstr(num2str(round(tpt * 1000, 0)'))';
+    cons = [1 1; 1 2];
+    means = [stats.mean.lowI(i,:); stats.mean.highI(i,:)];
+    ci_lo = [stats.ci_low.lowI(i,:); stats.ci_low.highI(i,:)];
+    ci_hi = [stats.ci_high.lowI(i,:); stats.ci_high.highI(i,:)];
+
+    for j = 1:2
+        itable{cnt,1} = sprintf('%s\t %s\t', subjectIDs{i}, itemConditionIds{j});
+        for k = 1:D
+            itable{cnt,1} = [itable{cnt,1}, sprintf('%1.2f [%1.2f-%1.2f]\t', means(j,k), ci_lo(j,k), ci_hi(j,k))];
+        end
+        cnt = cnt + 1; 
+    end
+end
+
+
+
+
+

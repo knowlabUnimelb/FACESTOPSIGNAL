@@ -1,0 +1,35 @@
+
+C:\Users\littled\Dropbox\Work\FACESTOPSIGNAL\analysis\Bayesian_Group_Analysis\tmpjags>setlocal
+
+C:\Users\littled\Dropbox\Work\FACESTOPSIGNAL\analysis\Bayesian_Group_Analysis\tmpjags>set PATH=C:\Program Files\JAGS\JAGS-3.4.0\x64\bin\;C:\Program Files\MATLAB\R2020a\bin\win64;C:\gstreamer\1.0\x86_64\bin;C:\Rtools\bin;C:\Program Files (x86)\MiKTeX 2.9\miktex/bin\;C:\Program Files (x86)\MiKTeX 2.9\bin;C:\RBuildTools\3.3\bin;C:\RBuildTools\3.3\gcc-4.6.3\bin;C:\ProgramData\Oracle\Java\javapath;C:\Program Files\Common Files\Microsoft Shared\Windows Live;C:\Program Files (x86)\Common Files\Microsoft Shared\Windows Live;C:\Program Files\JAGS\JAGS-3.4.0\x64\bin;C:\PuTTY;C:\Users\littled\AppData\Local\JAGS\JAGS-3.4.0;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\Program Files\MATLAB\R2020a\runtime\win64;C:\Program Files\MATLAB\R2020a\bin;C:\Program Files (x86)\Windows Live\Shared;C:\Program Files\R\R-3.6.3\bin;C:\Program Files (x86)\GNU\GnuPG\pub;C:\Program Files\Git\cmd;C:\Program Files\PsychoPy3;C:\Program Files\PsychoPy3\DLLs; C:\gstreamer\1.0\x86_64\bin;C:\Program Files\SlikSvn\bin;C:\Program Files (x86)\Sennheiser\SenncomSDK\;C:\WINDOWS\System32\OpenSSH\;C:\Users\littled\AppData\Local\Programs\Python\Python37\Scripts\;C:\Users\littled\AppData\Local\Programs\Python\Python37\;C:\Users\littled\AppData\Local\Pandoc\;C:\Users\littled\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin;C:\Users\littled\AppData\Local\Microsoft\WindowsApps; 
+
+C:\Users\littled\Dropbox\Work\FACESTOPSIGNAL\analysis\Bayesian_Group_Analysis\tmpjags>set LTDL_LIBRARY_PATH=C:\Program Files\JAGS\JAGS-3.4.0\x64\modules 
+
+C:\Users\littled\Dropbox\Work\FACESTOPSIGNAL\analysis\Bayesian_Group_Analysis\tmpjags>cls
+
+C:\Users\littled\Dropbox\Work\FACESTOPSIGNAL\analysis\Bayesian_Group_Analysis\tmpjags>jags-terminal jagscript3.cmd 
+Welcome to JAGS 3.4.0 on Sat Jan 16 12:08:01 2021
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+Loading module: wiener: ok
+Loading module: glm: ok
+Loading module: dic: ok
+Reading data file jagsdata.R
+Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+   Graph Size: 3147
+Reading parameter file jagsinit3.R
+
+WARNING: Unused variable(s) in initial value table:
+mu.T0
+mu.m
+mu.tau
+precT0
+precm
+prectau
+
+Initializing model
+Updating 5000
+Updating 50000

@@ -4,13 +4,15 @@ model{
     # Group level priors for each condition and item
     for (conIdx in 1:C){
         for (itemIdx in 1:I){
-            mu_m[conIdx, itemIdx] ~ dunif(.00001, 50) # noninformative prior at the item and group level
+            #mu_m[conIdx, itemIdx] ~ dunif(.00001, 50) # noninformative prior at the item and group level
+            mu_m[conIdx, itemIdx] ~ dunif(.00001, 10) # noninformative prior at the item and group level
             prec_m[conIdx, itemIdx] ~ dunif(.000001, 100)
 
             mu_T0[conIdx, itemIdx] ~ dunif(.00001, .5)
             prec_T0[conIdx, itemIdx] ~ dunif(.00001, 100)
 
-            mu_tau[conIdx, itemIdx] ~ dunif(.00001, 100)
+            #mu_tau[conIdx, itemIdx] ~ dunif(.00001, 100)
+            mu_tau[conIdx, itemIdx] ~ dunif(.00001, 10)
             prec_tau[conIdx, itemIdx] ~ dunif(.00001, 100)
 
             msamp[conIdx, itemIdx] ~ dnorm(mu_m[conIdx, itemIdx], prec_m[conIdx, itemIdx])T(0, )

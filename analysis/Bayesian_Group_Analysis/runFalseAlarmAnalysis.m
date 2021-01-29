@@ -339,3 +339,21 @@ legend([vh23(1), vh22(1), vh21(1)],...
     'Misaligned: Same/High','Misaligned: Same/Low', 'Misaligned: Same/Same',...
     'Location', 'Best')
 
+%% Plot individual table
+subjectIds = {'1', '2', '3', '1', '2', '3'};
+alignmentConditionIds = {'   Aligned', 'Misaligned'};
+itemConditionIds = {'', 'Same/Same', ' Same/Low', 'Same/High'};
+totalProcessingTimeStr = cellstr(num2str(round(tpt * 1000, 0)'))';
+
+cons  = falarms(:,1:3);
+means = stats.mean.thetaf;
+ci_lo = reshape(stats.ci_low.thetaf, R, D);
+ci_hi = reshape(stats.ci_high.thetaf, R, D);
+
+cnt = 1; 
+for i = 1:R
+    table{i,1} = sprintf('%s\t %s\t %4s\t', subjectIds{cons(i,1)}, alignmentConditionIds{cons(i,2)}, itemConditionIds{cons(i,3)});
+    for j = 1:D
+        table{i,1} = [table{i,1}, sprintf(' .%02d [.%02d-.%02d]\t', round(100*means(i,j),0), round(100*ci_lo(i,j),0), round(100*ci_hi(i,j), 0))];
+    end
+end
